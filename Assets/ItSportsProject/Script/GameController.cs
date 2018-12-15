@@ -177,6 +177,17 @@ public class GameController : MonoBehaviour {
             // ラケットの中央位置を取得
             Vector3 racketCenterPos = RacketCenter.GetComponent<Transform>().position;
 
+            // デバッグ用．ボールの前にラケットを転移
+            if(Input.GetKeyDown("space"))
+            {
+                print("space pressed");
+                float timeConst = 0.02f;
+                Vector3 offset = racketCenterPos - racketPos;
+                Vector3 newRacketPos = ballPos + ballSpeed * timeConst - offset;
+                print(racketPos);
+                racketController.setPosition(newRacketPos, racketDir);
+            }
+
             // プレイ履歴に記録
             MyTrace tr = new MyTrace();
             tr.ballPos= ballPos;

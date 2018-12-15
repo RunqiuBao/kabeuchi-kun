@@ -12,6 +12,11 @@ public class PlayerController : MonoBehaviour
         // GameControllerオブジェクトを取得する。
         gameController = FindObjectOfType<GameController>();
 
+        // 手元でのデバッグ用．Viveとの同期がなくてもラケットを強制的に表示
+        // GameObject controller = gameObject.transform.Find("Controller (left)");
+        // print(controller);
+        
+
     }
 
     // Update is called once per frame

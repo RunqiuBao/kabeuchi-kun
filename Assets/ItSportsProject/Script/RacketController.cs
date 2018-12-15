@@ -45,7 +45,7 @@ public class RacketController : MonoBehaviour {
 
         // RacketにBallは接触していない状態に初期化
         isBallAttached = false;
-        
+
     }
 
     // Update is called once per frame
@@ -212,6 +212,15 @@ public class RacketController : MonoBehaviour {
         Text txt = MessageTextObj.GetComponent<Text>();
         txt.text = "--------";
 
+    }
+
+    // デバッグ用メソッド
+    public void setPosition(Vector3 pos, Quaternion dir)
+    {
+        Transform transform = GetComponent<Transform>();
+
+        transform.position = pos;
+        transform.rotation = dir;
     }
 
 }
