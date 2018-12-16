@@ -105,6 +105,8 @@ public class GameController : MonoBehaviour {
     GameObject playbackRacket;　// ラケット
     GameObject playbackBall;    // ボール
     GameObject playbackLine;    // ラケットとボールを結ぶライン
+    List<GameObject> playbackBallTrace = new List<GameObject>();
+    public int playbackMaxNumberOfBallTrace = 150;
     
     // ゲームの状態を表す。
     enum State  {
@@ -181,7 +183,7 @@ public class GameController : MonoBehaviour {
             if(Input.GetKeyDown("space"))
             {
                 print("space pressed");
-                float timeConst = 0.02f;
+                float timeConst = 0.03f;
                 Vector3 offset = racketCenterPos - racketPos;
                 Vector3 newRacketPos = ballPos + ballSpeed * timeConst - offset;
                 print(racketPos);
@@ -228,10 +230,27 @@ public class GameController : MonoBehaviour {
                     // Playback用のボールを移動
                     MoveGameObject(playbackBall, tr.ballPos);
 
+                    // 軌跡の表示
+                    playbackBallTrace.Add( CreateBallTrace(tr.ballPos) );
+                    if (playbackBallTrace.Count > playbackMaxNumberOfBallTrace)
+                    {
+                        Destroy(playbackBallTrace[0]);
+                        playbackBallTrace.RemoveAt(0);
+                    }
+                    foreach(GameObject trace in playbackBallTrace)
+                    {
+                        Color colorFade = new Color(0,0,0,1.0f/playbackMaxNumberOfBallTrace);
+                        Renderer renderer = trace.GetComponent<Renderer>();
+                        if(renderer.material.color.a > 0)
+                        {
+                            renderer.material.color -= colorFade; 
+                        }
+                    }
+
                     // ボールとラケットを結ぶ線
-                    LineRenderer lr = playbackLine.GetComponent<LineRenderer>();
-                    lr.SetPosition(0, tr.ballPos);
-                    lr.SetPosition(1, tr.racketCenterPos);
+                    // LineRenderer lr = playbackLine.GetComponent<LineRenderer>();
+                    // lr.SetPosition(0, tr.ballPos);
+                    // lr.SetPosition(1, tr.racketCenterPos);
 
                     //　履歴の先頭を削除
                     Trace.RemoveAt(0);
@@ -362,6 +381,8 @@ public class GameController : MonoBehaviour {
     {
 
         state = State.TraceDisplaying;
+
+        playbackBallTrace = new List<GameObject>();
         
         // トレース用のラケット、ボール、ラインを生成
         playbackRacket = Instantiate(RacketTracePrefab);
@@ -384,6 +405,10 @@ public class GameController : MonoBehaviour {
         Destroy(playbackRacket);
         Destroy(playbackBall);
         Destroy(playbackLine);
+
+        foreach(GameObject trace in playbackBallTrace){
+            Destroy(trace);
+        }
 
         // close data file
         RecordData("150 Ball finished");

@@ -209,6 +209,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8da09dbbdbe17cc4ea10ffa4a03de330, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ballSpotPrefab: {fileID: 1793082777769908, guid: d30a8816bb64569458c27ddc698c9482,
+    type: 2}
   xMin: 6
   xMax: 22
   yMin: -10

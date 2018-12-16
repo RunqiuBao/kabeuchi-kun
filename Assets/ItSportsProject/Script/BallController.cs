@@ -7,6 +7,8 @@ public class BallController : MonoBehaviour
 // Reference to GameController
     GameController gameController;
 
+    public GameObject ballSpotPrefab;
+
     // この領域を外れるとボールを無効にする
     public float xMin = 6;
     public float xMax = 22;
@@ -120,7 +122,21 @@ public class BallController : MonoBehaviour
             ballCollideWithRacket = true;
 
         }
+        
+    }
 
+    void OnCollisionStay(Collision collision)
+    {
+        Vector3 speed = new Vector3();
+        GetSpeed(ref speed);
+        print(speed);
+        float speedThreshold = 0.5f;
+        // ボールの跡をつける
+        if(collision.gameObject.tag.Contains("Court") && Mathf.Abs(speed.y) > speedThreshold) 
+        {
+            // BUG 床との衝突判定が2回起こっているらしい
+            Instantiate (ballSpotPrefab, collision.contacts[0].point, new Quaternion(0,0,0,0));
+        }
     }
 
     /************************************************
