@@ -7,6 +7,10 @@ TagManager:
   - Racket
   - Court
   - CourtOuter
+  - MyCourt
+  - OpponentCourt
+  - Net
+  - Server
   layers:
   - Default
   - TransparentFX

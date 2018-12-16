@@ -26,6 +26,9 @@ public class BallController : MonoBehaviour
     // Ballが有効か？
     bool ballIsLive;
 
+    // Ballが打たれてからワンバウンドしたか
+    bool ballBounded;
+
     // Ballと衝突したかどうかのFlag。このFlagが立つ直前のRacketの速度を記録するため利用
     bool ballCollideWithRacket = false;
     // Racketと衝突する直前のBallの速度
@@ -120,23 +123,43 @@ public class BallController : MonoBehaviour
         if (collision.gameObject == racket)
         {
             ballCollideWithRacket = true;
+            ballBounded = false;
+        }
+        else if(collision.gameObject.tag.Contains("Court")) // コートと接触時
+        {
 
+            // ワンバウンド目
+            if(! ballBounded) {
+                // ボールの跡をつける
+                Instantiate (ballSpotPrefab, collision.contacts[0].point, new Quaternion(0,0,0,0));
+
+                // 球の判定
+                bool validShot;
+                if(ballCollideWithRacket) { // 自分が打った球なら
+                    validShot = collision.gameObject.tag.Contains("OpponentCourt");
+                }
+                else{ // 相手が打った球なら
+                    validShot = collision.gameObject.tag.Contains("MyCourt");
+                }
+
+                // ジャッジのエフェクト
+                Color effectColor = validShot ? Color.green : Color.red;
+                var effectController = collision.gameObject.GetComponent<ColorEffectController>();
+                effectController.startColorEffect(effectColor);
+                ballBounded = true;
+            }
+        }
+        else if(collision.gameObject.tag.Contains("Net")) {
+            // ネットと接触時の処理
+        }
+        else if(collision.gameObject.tag.Contains("Server")) {
+        }
+        else{
+            // アウトとみなす
+            ballBounded = true;
+            print(collision.gameObject);
         }
         
-    }
-
-    void OnCollisionStay(Collision collision)
-    {
-        Vector3 speed = new Vector3();
-        GetSpeed(ref speed);
-        print(speed);
-        float speedThreshold = 0.5f;
-        // ボールの跡をつける
-        if(collision.gameObject.tag.Contains("Court") && Mathf.Abs(speed.y) > speedThreshold) 
-        {
-            // BUG 床との衝突判定が2回起こっているらしい
-            Instantiate (ballSpotPrefab, collision.contacts[0].point, new Quaternion(0,0,0,0));
-        }
     }
 
     /************************************************
@@ -156,6 +179,7 @@ public class BallController : MonoBehaviour
         birthTime = Time.time;
         ballIsLive = true;
         ballCollideWithRacket = false;
+        ballBounded = false;
     }
 
     // Ballの衝突音を再生
