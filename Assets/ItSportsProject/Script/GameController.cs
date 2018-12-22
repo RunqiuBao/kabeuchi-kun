@@ -56,12 +56,16 @@ public class GameController : MonoBehaviour {
 //    public float TraceDisplayTime;
     public UnityEngine.Video.VideoPlayer VideoController;
 
+    public GameObject ScoreBoard;
+
     // BallのGameObject。毎回作成するため、publicでは設定しない
     GameObject BallInstance;
     
     BallController ballController;
     RacketController racketController;
     PlayerController playerController;
+
+    ScoreBoardController scoreBoardController;
 
     // DATAを記録するディレクトリの名前
     string directoryName;
@@ -134,6 +138,7 @@ public class GameController : MonoBehaviour {
         // RacketController, PlayerControllerを取得
         racketController = Racket.GetComponent<RacketController>();
         playerController = Player.GetComponent<PlayerController>();
+        scoreBoardController = ScoreBoard.GetComponent<ScoreBoardController>();
 
         // まずは初めのトレーニングセットから始める
         currentTrainingIndex = 0;
@@ -368,6 +373,7 @@ public class GameController : MonoBehaviour {
         tr = hitPointRacket.GetComponent<Transform>();
         tr.position = new Vector3(0 - 100, 0);
 
+        scoreBoardController.enterPlay();
         // ビデオを再生開始
         PlayVideo();
 
@@ -400,6 +406,7 @@ public class GameController : MonoBehaviour {
     {
         exitZone();
         traceTimeElapsed = 0;
+        scoreBoardController.enterReplay();
 
         state = State.TraceDisplaying;
 

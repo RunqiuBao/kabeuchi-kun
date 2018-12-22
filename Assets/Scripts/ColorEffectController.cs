@@ -5,13 +5,8 @@ using UnityEngine;
 public class ColorEffectController : MonoBehaviour {
 
 	public float effectFadeSpeed = 1.0f;
-	Renderer renderer;
+	new Renderer renderer;
 	Color initialColor;
-	// State state;
-	// enum State {
-	// 	off,
-	// 	on
-	// }
 	void Start () {
 		// state = State.off;
 		renderer = GetComponent<Renderer>();
