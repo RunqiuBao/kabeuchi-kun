@@ -165,6 +165,19 @@ public class GameController : MonoBehaviour {
         //        Debug.Log("Update time :" + Time.deltaTime);
 
         if (state == State.Served)         {
+            servedUpdate();
+        }
+        else if (state == State.InPlay) // ボールが動いている状態
+        {
+            inPlayUpdate();
+        }
+        else if (state == State.TraceDisplaying) 
+        {
+            TraceDisplayingUpdate();
+        }
+    }
+
+    void servedUpdate() {
             // サーブのビデオを再生中。時間がたったらInPlay状態へ
             float time = Time.time - startTime;
             if (time >= 2.6f)　// サーブのビデオ内でサーブされる時刻。
@@ -172,118 +185,118 @@ public class GameController : MonoBehaviour {
                 // ボールを動かしだす。InPlay状態へ遷移
                 StartInPlay();
             }
-        }
-        else if (state == State.InPlay) // ボールが動いている状態
+    }
+
+    void inPlayUpdate() {
+        //　InPlayの状態の時はBallControllerからSetBallOutを呼び出されると状態が変わる。この中では状態は変わらない。
+
+        // ボールの位置を取得
+        Vector3 ballPos = new Vector3(0,0,0);
+        Quaternion ballDir = new Quaternion(0,0,0,0);
+        ballController.GetPosition(ref ballPos, ref ballDir);
+        // ボールの速度を取得
+        Vector3 ballSpeed = new Vector3();
+        BallInstance.GetComponent<BallController>().GetSpeed(ref ballSpeed);
+
+        // ラケットの位置と方向を取得
+        Vector3 racketPos = new Vector3(0, 0, 0);
+        Quaternion racketDir = new Quaternion(0, 0, 0, 0);;
+        racketController.GetPosition(ref racketPos, ref racketDir);
+
+        // ラケットの中央位置を取得
+        Vector3 racketCenterPos = RacketCenter.GetComponent<Transform>().position;
+
+        // デバッグ用．ボールの前にラケットを転移
+        if(Input.GetKeyDown("space"))
         {
-            //　InPlayの状態の時はBallControllerからSetBallOutを呼び出されると状態が変わる。この中では状態は変わらない。
-
-            // ボールの位置を取得
-            Vector3 ballPos = new Vector3(0,0,0);
-            Quaternion ballDir = new Quaternion(0,0,0,0);
-            ballController.GetPosition(ref ballPos, ref ballDir);
-            // ボールの速度を取得
-            Vector3 ballSpeed = new Vector3();
-            BallInstance.GetComponent<BallController>().GetSpeed(ref ballSpeed);
-
-            // ラケットの位置と方向を取得
-            Vector3 racketPos = new Vector3(0, 0, 0);
-            Quaternion racketDir = new Quaternion(0, 0, 0, 0);;
-            racketController.GetPosition(ref racketPos, ref racketDir);
-
-            // ラケットの中央位置を取得
-            Vector3 racketCenterPos = RacketCenter.GetComponent<Transform>().position;
-
-            // デバッグ用．ボールの前にラケットを転移
-            if(Input.GetKeyDown("space"))
-            {
-                print("space pressed");
-                float timeConst = 0.03f;
-                Vector3 offset = racketCenterPos - racketPos;
-                Vector3 newRacketPos = ballPos + ballSpeed * timeConst - offset;
-                print(racketPos);
-                racketController.setPosition(newRacketPos, racketDir);
-            }
-
-            // デバッグ用．zキーでゾーンモード
-            if(Input.GetKeyDown("z"))
-            {
-                enterZone();
-            }
-            if(Input.GetKeyUp("z"))
-            {
-                exitZone();
-            }
-
-            // プレイ履歴に記録
-            MyTrace tr = new MyTrace();
-            tr.ballPos= ballPos;
-            tr.racketPos = racketPos;
-            tr.racketDir = racketDir;
-            tr.racketCenterPos = racketCenterPos;
-            tr.time = timeElapsed;
-            Trace.Add(tr);
-            timeElapsed += Time.deltaTime;
-
-            //　BallをDATAへ記録
-            RecordData("200 BALL_POS: " + ballPos.x + "," + ballPos.y + "," + ballPos.z + "," + ballSpeed.x + "," + ballSpeed.y + "," + ballSpeed.z);
-
-            //　RacketをDATAへ記録
-            RecordData("210 RCKT_POS: " + racketCenterPos.x + "," + racketCenterPos.y + "," + racketCenterPos.z + "," + racketDir.eulerAngles.x + "," + racketDir.eulerAngles.y + "," + racketDir.eulerAngles.z);
+            print("space pressed");
+            float timeConst = 0.03f;
+            Vector3 offset = racketCenterPos - racketPos;
+            Vector3 newRacketPos = ballPos + ballSpeed * timeConst - offset;
+            print(racketPos);
+            racketController.setPosition(newRacketPos, racketDir);
         }
-        else if (state == State.TraceDisplaying) 
+
+        // デバッグ用．zキーでゾーンモード
+        if(Input.GetKeyDown("z"))
         {
-            // プレイ履歴を再生している状態。
+            enterZone();
+        }
+        if(Input.GetKeyUp("z"))
+        {
+            exitZone();
+        }
 
-            // 履歴がなくなったら、再生を終了。初期状態(Served)へ戻る。
-            if (Trace.Count == 0)
-            {
-                FinishPlayback();
-            }
-            else
-            {
-                // 操作履歴の先頭のデータ(最も古い）を取り出す。
-                MyTrace tr = Trace[0];
+        // プレイ履歴に記録
+        MyTrace tr = new MyTrace();
+        tr.ballPos= ballPos;
+        tr.racketPos = racketPos;
+        tr.racketDir = racketDir;
+        tr.racketCenterPos = racketCenterPos;
+        tr.time = timeElapsed;
+        Trace.Add(tr);
+        timeElapsed += Time.deltaTime;
 
-                // 前回履歴を表示してからの時刻に再生スピードをかけたものと
-                // 履歴の中でたった時間を比較。
-                while ( traceTimeElapsed >= tr.time && Trace.Count > 0) // time to go?
+        //　BallをDATAへ記録
+        RecordData("200 BALL_POS: " + ballPos.x + "," + ballPos.y + "," + ballPos.z + "," + ballSpeed.x + "," + ballSpeed.y + "," + ballSpeed.z);
+
+        //　RacketをDATAへ記録
+        RecordData("210 RCKT_POS: " + racketCenterPos.x + "," + racketCenterPos.y + "," + racketCenterPos.z + "," + racketDir.eulerAngles.x + "," + racketDir.eulerAngles.y + "," + racketDir.eulerAngles.z);
+    }
+
+    void TraceDisplayingUpdate(){
+        // プレイ履歴を再生している状態。
+
+        // 履歴がなくなったら、再生を終了。初期状態(Served)へ戻る。
+        if (Trace.Count == 0)
+        {
+            FinishPlayback();
+        }
+        else
+        {
+            // 操作履歴の先頭のデータ(最も古い）を取り出す。
+            MyTrace tr = Trace[0];
+
+            // 前回履歴を表示してからの時刻に再生スピードをかけたものと
+            // 履歴の中でたった時間を比較。
+            while ( traceTimeElapsed >= tr.time && Trace.Count > 0) // time to go?
+            {
+                tr = Trace[0];
+                // Playback用のラケットを移動
+                MoveGameObject(playbackRacket, tr.racketPos);
+                // Playback用のラケットの方向を変更
+                RotateGameObject(playbackRacket, tr.racketDir);
+                // Playback用のボールを移動
+                MoveGameObject(playbackBall, tr.ballPos);
+
+                // 軌跡の表示
+                playbackBallTrace.Add( CreateBallTrace(tr.ballPos) );
+                if (playbackBallTrace.Count > playbackMaxNumberOfBallTrace)
                 {
-                    tr = Trace[0];
-                    // Playback用のラケットを移動
-                    MoveGameObject(playbackRacket, tr.racketPos);
-                    // Playback用のラケットの方向を変更
-                    RotateGameObject(playbackRacket, tr.racketDir);
-                    // Playback用のボールを移動
-                    MoveGameObject(playbackBall, tr.ballPos);
-
-                    // 軌跡の表示
-                    playbackBallTrace.Add( CreateBallTrace(tr.ballPos) );
-                    if (playbackBallTrace.Count > playbackMaxNumberOfBallTrace)
-                    {
-                        Destroy(playbackBallTrace[0]);
-                        playbackBallTrace.RemoveAt(0);
-                    }
-                    foreach(GameObject trace in playbackBallTrace)
-                    {
-                        Color colorFade = new Color(0,0,0,1.0f/playbackMaxNumberOfBallTrace);
-                        Renderer renderer = trace.GetComponent<Renderer>();
-                        if(renderer.material.color.a > 0)
-                        {
-                            renderer.material.color -= colorFade; 
-                        }
-                    }
-
-                    // ボールとラケットを結ぶ線
-                    // LineRenderer lr = playbackLine.GetComponent<LineRenderer>();
-                    // lr.SetPosition(0, tr.ballPos);
-                    // lr.SetPosition(1, tr.racketCenterPos);
-
-                    //　履歴の先頭を削除
-                    Trace.RemoveAt(0);
+                    Destroy(playbackBallTrace[0]);
+                    playbackBallTrace.RemoveAt(0);
                 }
-                traceTimeElapsed += Time.deltaTime * GetPlayBackSpeed();
+                foreach(GameObject trace in playbackBallTrace)
+                {
+                    Color colorFade = new Color(0,0,0,1.0f/playbackMaxNumberOfBallTrace);
+                    Renderer renderer = trace.GetComponent<Renderer>();
+                    if(renderer.material.color.a > 0)
+                    {
+                        renderer.material.color -= colorFade; 
+                    }
+                }
+
+                // ボールとラケットを結ぶ線
+                // LineRenderer lr = playbackLine.GetComponent<LineRenderer>();
+                // lr.SetPosition(0, tr.ballPos);
+                // lr.SetPosition(1, tr.racketCenterPos);
+
+                //　履歴の先頭を削除
+                Trace.RemoveAt(0);
             }
+            traceTimeElapsed += Time.deltaTime * GetPlayBackSpeed();
         }
+
     }
 
     // GameObjectを移動する
