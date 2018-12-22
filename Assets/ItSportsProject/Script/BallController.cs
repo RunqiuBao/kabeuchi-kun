@@ -11,27 +11,29 @@ public class BallController : MonoBehaviour
     public GameObject ballSpotPrefab;
 
     // この領域を外れるとボールを無効にする
-    public float xMin = 6;
-    public float xMax = 22;
-    public float yMin = -10;
-    public float yMax = 10;
-    public float zMin = -13;
-    public float zMax = 12;
+    public float xMin;
+    public float xMax;
+    public float yMin;
+    public float yMax;
+    public float zMin;
+    public float zMax;
 
     // ボールが有効な最大時間。これを超えたら無効にする
-    public float maxTimeToLive = 6.0f;
+    public float maxTimeToLive;
 
     // Play中何個の軌跡を表示するか。
-    public int maxNumberOfBallTrace = 5;
+    public int maxNumberOfBallTrace;
 
     // Ballが有効か？
     bool ballIsLive;
+    bool flagBallKill;
 
     // Ballが打たれてからワンバウンドしたか
     bool ballBounded;
 
     // Ballと衝突したかどうかのFlag。このFlagが立つ直前のRacketの速度を記録するため利用
     bool ballCollideWithRacket = false;
+    bool playersBall = false;
     // Racketと衝突する直前のBallの速度
     Vector3 lastVelocity;
 
@@ -72,8 +74,11 @@ public class BallController : MonoBehaviour
         Rigidbody rb = GetComponent < Rigidbody > ();
 
         // Ballが無効になっていたら処理終わり。
-        if (!ballIsLive)
+        if (flagBallKill)
         {
+            ballIsLive = false;
+            flagBallKill = false;
+            StartCoroutine(delaykillBall(1.5f));
             return;
         }
 
@@ -101,14 +106,17 @@ public class BallController : MonoBehaviour
         // 範囲から外に出るか、maxTimeToLiveを過ぎたらBallを無効にする。
         if (( Time.time > birthTime + maxTimeToLive ) || (x < xMin) || (x > xMax) || (y < yMin) || (y > yMax) || (z < zMin) || (z > zMax))
         {
-// GameControllerに通知
-            gameController.SetBallOut();
-
-            ballIsLive = false;
-
-            Destroy(gameObject, .5f);
+            flagBallKill = true;
         }
 
+    }
+
+    IEnumerator delaykillBall(float delay){
+        yield return new WaitForSeconds(delay);
+
+        // GameControllerに通知
+        gameController.SetBallOut();
+        Destroy(gameObject);
     }
 
     // 物理演算エンジンにより、Ballが何かと衝突した際に呼ばれる。
@@ -125,8 +133,9 @@ public class BallController : MonoBehaviour
         {
             ballCollideWithRacket = true;
             ballBounded = false;
+            playersBall = true;
         }
-        else if(collision.gameObject.tag.Contains("Court")) // コートと接触時
+        else if(collision.gameObject.tag.Contains("Court") && ballIsLive) // コートと接触時
         {
             // ワンバウンド目
             if(! ballBounded) {
@@ -135,7 +144,7 @@ public class BallController : MonoBehaviour
 
                 // 球の判定
                 bool validShot;
-                if(ballCollideWithRacket) { // 自分が打った球なら
+                if(playersBall) { // 自分が打った球なら
                     validShot = collision.gameObject.tag.Contains("OpponentCourt");
                 }
                 else{ // 相手が打った球なら
@@ -147,6 +156,12 @@ public class BallController : MonoBehaviour
                 var effectController = collision.gameObject.GetComponent<ColorEffectController>();
                 effectController.startColorEffect(effectColor);
                 ballBounded = true;
+
+                if(validShot == false){
+                    flagBallKill = true;
+                }
+            } else {
+                flagBallKill = true;
             }
         }
         else if(collision.gameObject.tag.Contains("Net")) {
@@ -154,9 +169,20 @@ public class BallController : MonoBehaviour
         }
         else if(collision.gameObject.tag.Contains("Server")) {
         }
+        else if(collision.gameObject.tag.Contains("Kabeuchikun") && ballIsLive) {
+            Vector3 initialSpeed = new Vector3(0,7,12);
+            SetSpeed(initialSpeed);
+
+            ballBounded = false;
+            playersBall = false;
+
+            var KabeuchikunController = collision.gameObject.GetComponent<KabeuchikunController>();
+            KabeuchikunController.hit();
+
+        }
         else{
             // アウトとみなす
-            ballBounded = true;
+            flagBallKill = true;
             print(collision.gameObject);
         }
         
@@ -180,6 +206,7 @@ public class BallController : MonoBehaviour
         ballIsLive = true;
         ballCollideWithRacket = false;
         ballBounded = false;
+        playersBall = false;
     }
 
     // Ballの衝突音を再生
