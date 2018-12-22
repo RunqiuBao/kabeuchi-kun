@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class ControllerController : MonoBehaviour
 {
     GameController gameController;
+    ushort biv_duration = 2000;
+    int biv_count = 0;
+    float value_prev = 0;
 
     private void Start()
     {
@@ -31,6 +34,17 @@ public class ControllerController : MonoBehaviour
         // Triggerの値からSpeedを変更。
         // Trigger =0(離されている) -> Speed = 2(2倍速）
         // Trigger =1(握られている) -> Speed ≒ 0.03(30分の一倍速）
+
+
+        if (value < 0.5 && value_prev >=0.5) {
+            gameController.enterZone();
+        }
+        else if(value >= 0.5 && value_prev < 0.5){
+            gameController.exitZone();
+        }
+        value_prev = value;
+
+        
         float speed = (float)( - value * 2 + 2.03);
 
         // Scoreボードにスピードを表示（デバッグ用）
@@ -40,5 +54,18 @@ public class ControllerController : MonoBehaviour
 
         // GameControllerにSpeedを設定
         gameController.SetPlayBackSpeed( speed );
+
+        if(biv_count > 0) {
+            device.TriggerHapticPulse(biv_duration);
+            biv_count--;
+        }
+        
+    }
+
+
+    public void start_vibration(int msec, ushort _biv_duration) {
+        int fps = 90;
+        biv_duration = _biv_duration;
+        biv_count = fps * msec / 1000;
     }
 }

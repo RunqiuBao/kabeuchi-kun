@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class BallController : MonoBehaviour
 {
 // Reference to GameController
@@ -127,7 +128,6 @@ public class BallController : MonoBehaviour
         }
         else if(collision.gameObject.tag.Contains("Court")) // コートと接触時
         {
-
             // ワンバウンド目
             if(! ballBounded) {
                 // ボールの跡をつける
@@ -183,11 +183,12 @@ public class BallController : MonoBehaviour
     }
 
     // Ballの衝突音を再生
-    public void PlayHitSound()
+    public void PlayHitSound(float volume)
     {
         if ( sound == null)
             sound = GetComponent<AudioSource>();
-
+        
+        sound.volume = volume;　//音量を操作
         sound.PlayOneShot(sound.clip);
     }
 

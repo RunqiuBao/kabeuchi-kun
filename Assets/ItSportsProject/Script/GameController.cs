@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.PostProcessing;
 
 public class GameController : MonoBehaviour {
 
@@ -71,6 +72,8 @@ public class GameController : MonoBehaviour {
     float startTime;
     // プレイ履歴の再生を始めた時刻
     float startTraceTime;
+    // プレイ履歴の再生を始めてからの，再生速度も考慮した経過時間
+    float traceTimeElapsed;
     // 最後にプレイ履歴を更新した時刻。
     float lastPlaybackTime;
 
@@ -79,6 +82,10 @@ public class GameController : MonoBehaviour {
 
     // InPlay状態が始まった(ボールがサーブされた）時刻
     float inplayStartTime;
+
+    // InPlay状態が始まってから経過したゲーム内時間
+    float timeElapsed;
+    float lastFrameTime;
 
     // トレーニング（ボールの速度、プレイヤーの位置を格納）
     TrainingSet currentTraining;
@@ -107,6 +114,8 @@ public class GameController : MonoBehaviour {
     GameObject playbackLine;    // ラケットとボールを結ぶライン
     List<GameObject> playbackBallTrace = new List<GameObject>();
     public int playbackMaxNumberOfBallTrace = 150;
+
+    public float zoneTimeRate = 0.2f;
     
     // ゲームの状態を表す。
     enum State  {
@@ -190,14 +199,25 @@ public class GameController : MonoBehaviour {
                 racketController.setPosition(newRacketPos, racketDir);
             }
 
+            // デバッグ用．zキーでゾーンモード
+            if(Input.GetKeyDown("z"))
+            {
+                enterZone();
+            }
+            if(Input.GetKeyUp("z"))
+            {
+                exitZone();
+            }
+
             // プレイ履歴に記録
             MyTrace tr = new MyTrace();
             tr.ballPos= ballPos;
             tr.racketPos = racketPos;
             tr.racketDir = racketDir;
             tr.racketCenterPos = racketCenterPos;
-            tr.time = Time.time - inplayStartTime;
+            tr.time = timeElapsed;
             Trace.Add(tr);
+            timeElapsed += Time.deltaTime;
 
             //　BallをDATAへ記録
             RecordData("200 BALL_POS: " + ballPos.x + "," + ballPos.y + "," + ballPos.z + "," + ballSpeed.x + "," + ballSpeed.y + "," + ballSpeed.z);
@@ -221,8 +241,9 @@ public class GameController : MonoBehaviour {
 
                 // 前回履歴を表示してからの時刻に再生スピードをかけたものと
                 // 履歴の中でたった時間を比較。
-                if ((Time.time - startTraceTime) * GetPlayBackSpeed() >= ( tr.time - lastPlaybackTime)  ) // time to go?
+                while ( traceTimeElapsed >= tr.time && Trace.Count > 0) // time to go?
                 {
+                    tr = Trace[0];
                     // Playback用のラケットを移動
                     MoveGameObject(playbackRacket, tr.racketPos);
                     // Playback用のラケットの方向を変更
@@ -254,11 +275,8 @@ public class GameController : MonoBehaviour {
 
                     //　履歴の先頭を削除
                     Trace.RemoveAt(0);
-
-                    // 再生した時刻を記憶
-                    lastPlaybackTime = tr.time;
-                    startTraceTime = Time.time;
                 }
+                traceTimeElapsed += Time.deltaTime * GetPlayBackSpeed();
             }
         }
     }
@@ -369,16 +387,19 @@ public class GameController : MonoBehaviour {
         // 初期スピードを設定   
         ballController.SetSpeed(currentTraining.initialBallSpeed);
 
-        PlayBallHitSound();
+        PlayBallHitSound(0.8f);
        
         // 開始時刻を記録
         inplayStartTime = Time.time;
+        timeElapsed = 0;
 
     }
 
     //　TraceDisplayingの状態が始まる。
     void StartTraceDisplay()
     {
+        exitZone();
+        traceTimeElapsed = 0;
 
         state = State.TraceDisplaying;
 
@@ -437,10 +458,10 @@ public class GameController : MonoBehaviour {
     }
 
     // Ballがなにかに当たった音を再生。BallControllerを呼び出す。
-    public void PlayBallHitSound()
+    public void PlayBallHitSound(float volume)
     {
         Debug.Log("GameController: PlayBallHit()");
-        ballController.PlayHitSound();
+        ballController.PlayHitSound(volume);
     }
 
     // ボールがラケットに当たった。
@@ -532,5 +553,30 @@ public class GameController : MonoBehaviour {
     {
         dataLog.Write(System.DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff - "));
         dataLog.WriteLine(str);
+    }
+
+    // ゾーンモードに突入
+    public void enterZone() {
+        // プレイ中以外は処理しない
+        if(state != State.InPlay){
+            return;
+        }
+        Time.timeScale = zoneTimeRate;
+        var eye = GameObject.Find("Camera (eye)");
+        var behaviour = eye.GetComponent<PostProcessingBehaviour>();
+        behaviour.enabled = true;
+    }
+
+
+    // ゾーンモードを終了
+    public void exitZone() {
+        // プレイ中以外は処理しない
+        if(state != State.InPlay){
+            return;
+        }
+        Time.timeScale = 1.0f;
+        var eye = GameObject.Find("Camera (eye)");
+        var behaviour = eye.GetComponent<PostProcessingBehaviour>();
+        behaviour.enabled = false;
     }
 }

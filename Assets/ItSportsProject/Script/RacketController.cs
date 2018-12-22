@@ -122,6 +122,23 @@ public class RacketController : MonoBehaviour {
                 isBallAttached = false;
                 // GameController経由でBallの速度を設定
                 gameController.setBallPos(newBallPos, newBallSpeed);
+
+                // GameControllerにボールが当たったサウンドの再生を指示
+                // 打った後のボールの速度をもとに音量を計算
+                float volume_coefficient = 0.01f;
+                print(newBallSpeed.magnitude);
+                float volume = System.Math.Min(newBallSpeed.magnitude * volume_coefficient, 1.0f);
+                gameController.PlayBallHitSound(volume);
+
+                int vibration_coefficient = 30;
+                int vibration_coefficient2 = 10;
+
+                // int vibtime_ms = 600;
+                // TODO 振動させる
+                ControllerController controllerController = FindObjectOfType<ControllerController>();
+                ushort f = (ushort)(newBallSpeed.magnitude*vibration_coefficient);
+                int t = (ushort)(newBallSpeed.magnitude*vibration_coefficient2);
+                controllerController.start_vibration(t, f);
             }
         }
     }
@@ -138,9 +155,6 @@ public class RacketController : MonoBehaviour {
         Transform ballTr = ball.GetComponent<Transform>();
 
         Debug.Log("Racket:OnCollisionEnter. Collide with cp "+ ballTr.position);
-
-        // GameControllerにボールが当たったサウンドの再生を指示
-        gameController.PlayBallHitSound();
 
         // Collision.contacts[]には衝突した場所が格納されている。
         ContactPoint cp = collision.contacts[0];
